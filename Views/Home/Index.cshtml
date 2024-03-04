@@ -1,0 +1,143 @@
+﻿@model AV.ForeignExchangeRates.Front.Models.Account
+@{
+}
+<div class="fullscreen">
+    <header class="p-3 d-flex justify-content-between align-items-center bg-color-primary">
+        <img src="~/logo-white.svg" style="width:15%">
+        <a href="javascript:document.querySelector('#logoutForm').submit()" class="log-out-btn"><i class="fa fa-sign-out"></i> SIGN OUT</a>
+    </header>
+    <div class="p-4">
+        <div class="bg-white p-2">
+            <div class="d-flex gap-4">
+                <div class="d-inline-flex flex-column h-100">
+                    <span class="title fs-2 fw-semibold font-color-primary">Forex Daily Prices</span>
+                    <span class="fw-semibold">Last refresh: <span id="last-refresh"></span></span>
+                </div>
+                <div class="d-inline-flex flex-row align-items-center gap-2">
+                    <select class="form-select" id="from-currency-select">
+                        <option disabled value="USD">USD</option>
+                        <option value="JPY">JPY</option>
+                        <option value="CNY">CNY</option>
+                        <option value="EUR">EUR</option>
+                        <option value="BRL">BRL</option>
+                        <option selected value="GBP">GBP</option>
+                    </select>
+                    <select class="form-select" id="to-currency-select">
+                        <option selected value="USD">USD</option>
+                        <option value="JPY">JPY</option>
+                        <option value="CNY">CNY</option>
+                        <option value="EUR">EUR</option>
+                        <option value="BRL">BRL</option>
+                        <option disabled value="GBP">GBP</option>
+                    </select>
+                    <button class="border-0 bg-white" id="refresh-button"><i class="fa fa-refresh"></i></button>
+                </div>
+            </div>
+            <div class="d-flex mt-3">
+                <div class="col-3 text-center fw-semibold p-2 border-right-1 border opacity-75 border-left-0 border-top-0">
+                    Open
+                </div>
+                <div class="col-3 text-center fw-semibold p-2 border-right-1 border  border-top-0">
+                    High
+                </div>
+                <div class="col-3 text-center fw-semibold p-2 border-right-1 border  border-top-0">
+                    Low
+                </div>
+                <div class="col-3 text-center fw-semibold p-2 border-right-1 border opacity-75  border-top-0">
+                    Close
+                </div>
+            </div>
+            <div class="d-flex">
+                <div class="bg-grey-lighter col-3 text-center fw-semibold p-2 border-1 border opacity-75 border-right-0 border-left-0">
+                    <span id="open-val"></span>
+                </div>
+                <div class="bg-grey-light col-3 text-center fw-semibold p-2 border-1 border border-right-0">
+                    <span id="high-val"></span>
+                </div>
+                <div class="bg-grey-light col-3 text-center fw-semibold p-2 border-1 border border-right-0">
+                    <span id="low-val"></span>
+                </div>
+                <div class="bg-grey-lighter col-3 text-center fw-semibold p-2 border-1 border opacity-75 border-right-0">
+                    <span id="close-val"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form id="logoutForm" asp-controller="Login" method="post" asp-action="SignOut" class="d-none">
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        const fromCurrencySelect = document.querySelector("#from-currency-select")
+        const toCurrencySelect = document.querySelector("#to-currency-select")
+
+        const openVal = document.querySelector("#open-val")
+        const highVal = document.querySelector("#high-val")
+        const lowVal = document.querySelector("#low-val")
+        const closeVal = document.querySelector("#close-val")
+
+        const refreshButton = document.querySelector("#refresh-button")
+        const lastRefresh = document.querySelector("#last-refresh")
+
+        function getValues() {
+            const htmlLoadingSpinner = "<i class=\"fa fa-spinner fa-spin\"></i>"
+            const htmlLoadingError = "<i class=\"fa fa-exclamation-triangle\"></i>"
+
+            const fromCurrency = fromCurrencySelect.value;
+            const toCurrency = toCurrencySelect.value;
+
+            console.log(fromCurrency, toCurrency)
+
+            const url = `fx-daily?fromCurrency=${fromCurrency}&toCurrency=${toCurrency}`
+
+            setHtmlForResults(htmlLoadingSpinner)
+
+            fetch(url).then(resp => {
+                return resp.json()
+            }).then(responseJson => {
+                setResults(responseJson)
+            }).catch((error) => {
+                alert("Error fetching fx daily data")
+                console.log(error)
+                setHtmlForResults(htmlLoadingError)
+            })
+        }
+
+        function setResults(json) {
+            openVal.innerHTML = json.open
+            highVal.innerHTML = json.high
+            lowVal.innerHTML = json.low
+            closeVal.innerHTML = json.close
+            lastRefresh.innerHTML = json.lastRefresh
+        }
+
+        function setHtmlForResults(html) {
+            openVal.innerHTML = html
+            highVal.innerHTML = html
+            lowVal.innerHTML = html
+            closeVal.innerHTML = html
+        }
+
+        refreshButton.addEventListener('click', getValues)
+
+        fromCurrencySelect.addEventListener('change', (event) => {
+            disableOption("#to-currency-select option", event.target.value)
+            getValues()
+        })
+
+        toCurrencySelect.addEventListener('change', (event) => {
+            disableOption("#from-currency-select option", event.target.value)
+            getValues()
+        })
+
+        function disableOption(querySelector, value) {
+            document.querySelectorAll(querySelector).forEach(opt => {
+                opt.disabled = opt.value === value
+            });
+        }
+
+        getValues();
+    </script>
+}
